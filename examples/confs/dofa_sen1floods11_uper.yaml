@@ -112,8 +112,7 @@ model:
       decoder: UperNetDecoder
       backbone_pretrained: True
       backbone: dofav2_large_patch14_224
-      #backbone_ckpt_data: https://hf.co/earthflow/DOFA/resolve/main/dofav2_vit_large_e150.pth
-      backbone_ckpt_data: https://hf.co/earthflow/DOFA/resolve/main/dinov2_large_patch14_224.pth
+      backbone_ckpt_data: https://hf.co/earthflow/DOFA/resolve/main/dofav2_vit_large_e150.pth
       backbone_convert_patch_14_to_16: False
       backbone_img_size: 512
       # decoder_scale_modules: True
