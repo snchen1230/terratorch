@@ -60,6 +60,7 @@ from terratorch.datamodules.openearthmap import OpenEarthMapNonGeoDataModule
 from terratorch.datamodules.sen4map import Sen4MapLucasDataModule
 
 from terratorch.datamodules.m_VHR10 import mVHR10DataModule
+from terratorch.datamodules.m_wind_turbine import mWindTurbineDataModule
 
 
 __all__ = (
@@ -96,7 +97,8 @@ __all__ = (
     "PASTISDataModule",
     "Sen4AgriNetDataModule",
     "GenericMultiModalDataModule",
-    "mVHR10DataModule"
+    "mVHR10DataModule",
+    "mWindTurbineDataModule"
 )
 
 if wxc_present:

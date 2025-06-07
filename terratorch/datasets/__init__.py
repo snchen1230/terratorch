@@ -60,6 +60,7 @@ from terratorch.datasets.openearthmap import OpenEarthMapNonGeo
 from terratorch.datasets.sen4map import Sen4MapDatasetMonthlyComposites
 
 from terratorch.datasets.m_VHR10 import mVHR10
+from terratorch.datasets.m_wind_turbine import mWindTurbine
 
 __all__ = (
     "GenericNonGeoSegmentationDataset",
@@ -105,5 +106,6 @@ __all__ = (
     "OpticalBands",
     "SARBands",
     "OpenEarthMapNonGeo",
-    "mVHR10"
+    "mVHR10",
+    "mWindTurbine"
 )

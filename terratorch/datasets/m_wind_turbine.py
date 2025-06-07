@@ -26,7 +26,7 @@ class mWindTurbine(GeoBenchWindTurbine):
     """mWindTurbine dataset.
     The WindTurbine dataset from geobench_v2.
     """
-    categories = ("background", "wind_turbine", "wind_turbine2")
+    categories = ("background", "wind_turbine")
   
     def plot(
         self,

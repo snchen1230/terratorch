@@ -1,4 +1,3 @@
-import warnings
 from typing import Any
 from functools import partial
 import os
@@ -68,10 +67,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         tiled_inference_parameters: TiledInferenceParameters = None,
         test_dataloaders_names: list[str] | None = None,
         lr_overrides: dict[str, float] | None = None,
-        output_on_inference: str | list[str] = "prediction",
         output_most_probable: bool = True,
-        path_to_record_metrics: str = None,
-        tiled_inference_on_testing: bool = False,
     ) -> None:
         """Constructor
 
@@ -116,16 +112,10 @@ class SemanticSegmentationTask(TerraTorchTask):
                 which assumes only one test dataloader is used.
             lr_overrides (dict[str, float] | None, optional): Dictionary to override the default lr in specific
                 parameters. The key should be a substring of the parameter names (it will check the substring is
-                contained in the parameter name) and the value should be the new lr. Defaults to None.
-            output_on_inference (str | list[str]): A string or a list defining the kind of output to be saved to file during the inference, for example,
-                it can be "prediction", to save just the most probable class, or ["prediction", "probabilities"] to save both prediction and probabilities.
-            output_most_probable (bool): A boolean to define if the prediction step will output just the most probable logit or all of them.
-                This argument has been deprecated and will be replaced with `output_on_inference`. 
-            tiled_inference_on_testing (bool): A boolean to define if tiled inference will be used when full inference 
-                fails during the test step. 
-            path_to_record_metrics (str): A path to save the file containing the metrics log. 
+                contained in the parameter name)and the value should be the new lr. Defaults to None.
+            output_most_probable (bool): A boolean to define if the output during the inference will be just
+                for the most probable class or if it will include all of them. 
         """
-
         self.tiled_inference_parameters = tiled_inference_parameters
         self.aux_loss = aux_loss
         self.aux_heads = aux_heads
@@ -138,8 +128,7 @@ class SemanticSegmentationTask(TerraTorchTask):
         if model_factory and model is None:
             self.model_factory = MODEL_FACTORY_REGISTRY.build(model_factory)
 
-        super().__init__(task="segmentation", tiled_inference_on_testing=tiled_inference_on_testing,
-                         path_to_record_metrics=path_to_record_metrics)
+        super().__init__(task="segmentation")
 
         if model is not None:
             # Custom model
@@ -152,45 +141,12 @@ class SemanticSegmentationTask(TerraTorchTask):
         self.val_loss_handler = LossHandler(self.val_metrics.prefix)
         self.monitor = f"{self.val_metrics.prefix}loss"
         self.plot_on_val = int(plot_on_val)
-        self.output_on_inference = output_on_inference
+        self.output_most_probable = output_most_probable
 
-        # When the user decides to use `output_most_probable` as `False` in
-        # order to output the probabilities instead of the prediction.
-        if not output_most_probable:
-            warnings.warn("The argument `output_most_probable` is deprecated and will be replaced with `output_on_inference='probabilities'`.", stacklevel=1)
-            output_on_inference = "probabilities"
-
-        # Processing the `output_on_inference` argument.
-        self.output_prediction = lambda y: (y.argmax(dim=1), "pred")
-        self.output_logits = lambda y: (y, "logits")
-        self.output_probabilities = lambda y: (torch.nn.Softmax()(y), "probabilities")
-
-        # The possible methods to define outputs.
-        self.operation_map = {
-                              "prediction": self.output_prediction, 
-                              "logits": self.output_logits, 
-                              "probabilities": self.output_probabilities
-                              }
-
-        # `output_on_inference` can be a list or a string.
-        if isinstance(output_on_inference, list):
-            list_of_selectors = ()
-            for var in output_on_inference:
-                if var in self.operation_map:
-                    list_of_selectors += (self.operation_map[var],)
-                else:
-                    raise ValueError(f"Option {var} is not supported. It must be in ['prediction', 'logits', 'probabilities']")
-
-            if not len(list_of_selectors):
-                raise ValueError("The list of selectors for the output is empty, please, provide a valid value for `output_on_inference`")
-
-            self.select_classes = lambda y: [op(y) for op in
-                                                   list_of_selectors]
-        elif isinstance(output_on_inference, str):
-            self.select_classes = self.operation_map[output_on_inference]
-
+        if output_most_probable:
+            self.select_classes = lambda y: y.argmax(dim=1) 
         else:
-            raise ValueError(f"The value {output_on_inference} isn't supported for `output_on_inference`.")
+            self.select_classes = lambda y: y
 
     def configure_losses(self) -> None:
         """Initialize the loss criterion.
@@ -309,7 +265,27 @@ class SemanticSegmentationTask(TerraTorchTask):
 
         rest = {k: batch[k] for k in other_keys}
 
-        model_output = self.handle_full_or_tiled_inference(x, self.hparams["model_args"]["num_classes"], **rest)
+        def model_forward(x,  **kwargs):
+            return self(x, **kwargs).output
+
+        # When the input sample cannot be fit on memory for some reason
+        # the tiled inference is automatically invoked.
+        try:
+            model_output: ModelOutput = self(x, **rest)
+        except RuntimeError:
+            logger.info("\n The input sample could not run in a full format. Using tiled inference.")
+            looger.info("Notice that the tiled inference WON'T produce the exactly same result as the full inference.")
+            if self.tiled_inference_parameters:
+                y_hat: Tensor = tiled_inference(
+                    model_forward,
+                    x,
+                    self.hparams["model_args"]["num_classes"],
+                    self.tiled_inference_parameters,
+                    **rest,
+                )
+                model_output = ModelOutput(output=y_hat)
+            else:
+                raise Exception("You need to define a configuration for the tiled inference.")
 
         if dataloader_idx >= len(self.test_loss_handler):
             msg = "You are returning more than one test dataloader but not defining enough test_dataloaders_names."
@@ -322,8 +298,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         )
         y_hat_hard = to_segmentation_prediction(model_output)
         self.test_metrics[dataloader_idx].update(y_hat_hard, y)
-
-        self.record_metrics(dataloader_idx, y_hat_hard, y)
 
     def validation_step(self, batch: Any, batch_idx: int, dataloader_idx: int = 0) -> None:
         """Compute the validation loss and additional metrics.
@@ -404,6 +378,6 @@ class SemanticSegmentationTask(TerraTorchTask):
         else:
             y_hat: Tensor = self(x, **rest).output
 
-        y_hat_ = self.select_classes(y_hat)
+        y_hat = self.select_classes(y_hat)
 
-        return y_hat_, file_names
+        return y_hat, file_names

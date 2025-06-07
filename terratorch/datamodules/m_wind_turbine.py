@@ -68,7 +68,7 @@ def apply_transforms(sample, transforms):
     sample['image'] = np.array(sample['image'].cpu())
     #TODO: adjust the 
     sample["bbox_xyxy"] = np.array(sample["bbox_xyxy"].cpu()) * 512
-    sample["label"] = np.array(sample["label"].cpu()) + 1
+    sample["label"] = ((np.array(sample["label"].cpu())+1) >= 1).astype(np.uint8)
 
     #print(np.unique(sample["label"]))
     transformed = transforms(image=sample['image'],

@@ -6,11 +6,10 @@ import torch
 from torch import nn
 
 try:
-    from peft.mapping import PEFT_TYPE_TO_CONFIG_MAPPING
-    from peft.mapping_func import get_peft_model
+    from peft.mapping import PEFT_TYPE_TO_CONFIG_MAPPING, get_peft_model
 
     _has_peft = True
-except ModuleNotFoundError:
+except ImportError:
     _has_peft = False
 
 TESTED_PEFT_METHODS = ["LORA"]

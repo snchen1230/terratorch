@@ -48,13 +48,10 @@ def get_common_prefix(keys):
 
     if len(prefix_list) > 1:
         prefix = ".".join(prefix_list)
-    elif len(prefix_list) == 1:
-        prefix = prefix_list.pop()
-        prefix = prefix + "."
     else:
-        prefix = None
+        prefix = prefix_list.pop()
 
-    return prefix
+    return prefix + "."
 
 def get_proj_key(state_dict, encoder_only=True, return_prefix=False):
 

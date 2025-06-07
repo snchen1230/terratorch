@@ -110,7 +110,8 @@ class ObjectDetectionModelFactory(ModelFactory):
         
         if framework == 'faster-rcnn':
 
-            sizes = ((32), (64), (128), (256), (512))
+            #sizes = ((32), (64), (128), (256), (512))
+            sizes = ((16), (32), (64), (128), (256))
             sizes = sizes[:len(combined_backbone.channel_list)]
             aspect_ratios = ((0.5, 1.0, 2.0),) * len(sizes)
             anchor_generator = AnchorGenerator(sizes=sizes, aspect_ratios=aspect_ratios)
@@ -183,6 +184,9 @@ class ObjectDetectionModelFactory(ModelFactory):
         elif framework == 'mask-rcnn':
 
             sizes = ((32), (64), (128), (256), (512))
+            #sizes = ((16), (32), (64), (128), (256))
+            #sizes = ((8,), (16,), (32,), (64,), (128,), (256,))
+
             sizes = sizes[:len(combined_backbone.channel_list)]
             aspect_ratios = ((0.5, 1.0, 2.0),) * len(sizes)
             anchor_generator = AnchorGenerator(sizes=sizes, aspect_ratios=aspect_ratios)
@@ -247,7 +251,7 @@ class ObjectDetectionModel(Model):
         self.model_name = model_name
 
     def forward(self, x, *args, **kwargs):
-        # pdb.set_trace()
+        #pdb.set_trace()
         # x = ImageContainer(x)
         return ModelOutputObjectDetection(self.torchvision_model(x, *args, **kwargs))
 
