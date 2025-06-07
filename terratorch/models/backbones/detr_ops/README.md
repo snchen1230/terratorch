@@ -1,1 +1,0 @@
-Taken from https://github.com/czczup/ViT-Adapter under Apache-2.0 License.
