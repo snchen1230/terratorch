@@ -1,0 +1,82 @@
+# lightning.pytorch==2.1.1
+seed_everything: 0
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: 16-mixed
+  logger:
+    class_path: TensorBoardLogger
+    init_args:
+      save_dir: /home/xshadow/terratorch/logs/od_vhr10_resnet50_hpo/
+      name: od_vhr10_resnet50_lr_1e-4_wd_0.05_warmup_2_e40
+  callbacks:
+    # - class_path: RichProgressBar
+    - class_path: LearningRateMonitor
+      init_args:
+        logging_interval: epoch
+    - class_path: ModelCheckpoint
+      init_args:
+          # dirpath: output/agb/checkpoints
+          mode: max
+          monitor: val_map
+          filename: best-{epoch:02d}
+  max_epochs: 40
+  check_val_every_n_epoch: 1
+  log_every_n_steps: 50
+  enable_checkpointing: true
+  default_root_dir: /home/xshadow/terratorch/logs/
+data:
+  class_path: terratorch.datamodules.mVHR10DataModule
+  init_args:
+    root: /home/xshadow/terratorch/data/VHR10/
+    download: true
+    batch_size: 4
+    num_workers: 4
+
+model:
+  class_path: terratorch.tasks.ObjectDetectionTask
+  init_args:
+    model_factory: ObjectDetectionModelFactory
+    model_args:
+      framework: mask-rcnn  # Model name of TorchVision (one of faster-rcnn, fcos, retinanet, mask-rcnn)
+      backbone: timm_resnet50  # One of resnet18, resnet34, resnet50, resnet101, resnet152, resnext50_32x4d, resnext101_32x8d, wide_resnet50_2, or wide_resnet101_2
+      backbone_pretrained: true
+      num_classes: 12  # Number of classes including background
+      in_channels: 3
+      necks:
+        - name: FeaturePyramidNetworkNeck
+        
+    freeze_backbone: false
+    freeze_decoder: false
+    class_names:  # Optional class names (Alphabetic order for generic classification dataset)
+      - Background
+      - Airplane
+      - Ships
+      - Storage tank
+      - Baseball diamond
+      - Tennis court
+      - Basketball court
+      - Ground track field
+      - Harbor
+      - Bridge
+      - Vehicle
+
+
+optimizer:
+  class_path: torch.optim.AdamW
+  init_args:
+    lr: 1e-4   #{5e-5, 1e-4, 3e-4}
+    weight_decay: 0.05   #{0.005, 0.01, 0.05}
+
+lr_scheduler:
+  class_path: torch.optim.lr_scheduler.OneCycleLR
+  init_args:
+    max_lr: 1e-4
+    total_steps: 40  # epochs in total
+    pct_start: 0.05   # 5% for warmup (5/100)
+    anneal_strategy: "cos"  # cosine annealing after warmup
+    div_factor: 10.0   # init lr: max_lr * 1/10
+    final_div_factor: 1000.0  # final lr:max_lr * 1/1000
+
