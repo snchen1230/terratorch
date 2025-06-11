@@ -43,9 +43,9 @@ model:
     model_factory: ObjectDetectionModelFactory
     model_args:
       framework: faster-rcnn
-      backbone: dofav2_large_patch14_224
+      backbone: dofav1_large_patch16_224
       backbone_pretrained: true
-      backbone_ckpt_data: https://hf.co/earthflow/DOFA/resolve/main/dofav2_vit_large_e150.pth
+      backbone_ckpt_data: https://hf.co/torchgeo/dofa/resolve/main/dofa_large_patch16_224-0ff904d3.pth
       backbone_pos_interpolation_mode: bicubic
       num_classes: 2
       backbone_img_size: 512
