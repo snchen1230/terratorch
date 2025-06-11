@@ -22,7 +22,7 @@ trainer:
     - class_path: ModelCheckpoint
       init_args:
           mode: max
-          monitor: val_map
+          monitor: val_bbox_map
           filename: best-{epoch:02d}
   max_epochs: 100
   check_val_every_n_epoch: 1
