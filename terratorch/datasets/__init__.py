@@ -62,7 +62,8 @@ from terratorch.datasets.sen4map import Sen4MapDatasetMonthlyComposites
 from terratorch.datasets.m_VHR10 import mVHR10
 
 from terratorch.datasets.substation import Substation
-from terratorch.datasets.m_wind_turbine import mWindTurbine
+
+from terratorch.datasets.dataset4eo_builtin import load_dataset4eo_builtin
 
 __all__ = (
     "GenericNonGeoSegmentationDataset",
@@ -110,5 +111,4 @@ __all__ = (
     "OpenEarthMapNonGeo",
     "mVHR10",
     "Substation",
-    "mWindTurbine"
 )
