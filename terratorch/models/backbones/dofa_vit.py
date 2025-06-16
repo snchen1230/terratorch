@@ -531,7 +531,7 @@ class DOFAEncoderWrapper(nn.Module):
         self.weights = weights
         self.wavelengths = wavelengths
 
-        self.out_indices = out_indices if out_indices else [-1]
+        self.out_indices = out_indices if out_indices else [len(self.dofa_model.model.blocks)-1]
         self.out_channels = [self.dofa_model.patch_embed.embed_dim] * len(self.out_indices)
         self.dofa_model.out_indices = self.out_indices
 

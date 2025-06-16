@@ -20,4 +20,4 @@ def load_dataset4eo_builtin(dataset_name: str, input_dir: str, num_channels: int
         num_channels=num_channels,
         channels_to_select=channels_to_select,
         **kwargs
-    )
+    ), local_path
