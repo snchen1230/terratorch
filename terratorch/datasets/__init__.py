@@ -111,4 +111,5 @@ __all__ = (
     "OpenEarthMapNonGeo",
     "mVHR10",
     "Substation",
+    "load_dataset4eo_builtin"
 )
